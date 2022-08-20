@@ -146,15 +146,16 @@ uint32_t get_2byte_from_raw_data(uint8_t* data, int offset) {
 
 void print_sjis_data(uint8_t* data, int32_t size) {
     for(int offset = 0; offset < size; ) {
-        if (data[offset] >= 0x81) { // 1バイト目が0x81以上なら２バイト文字
-            uint32_t sjis_code = 0;
-            sjis_code = get_2byte_from_raw_data(data, offset);
-            offset += 2;
-            print_utf8_from_sjis(table_sjis, sjis_code);
-        } else { // 1バイト目が0x81未満なら１バイト文字
+        if ((data[offset] < 0x80) ||
+            (data[offset] >= 0xA1 && data[offset] <= 0xDF)) { // 1バイト目が0x81未満なら１バイト文字
             uint32_t sjis_code = 0;
             sjis_code += data[offset]; // ２バイト分流し込む
             offset += 1;
+            print_utf8_from_sjis(table_sjis, sjis_code);
+        } else { // 1バイト目が0x81以上なら２バイト文字
+            uint32_t sjis_code = 0;
+            sjis_code = get_2byte_from_raw_data(data, offset);
+            offset += 2;
             print_utf8_from_sjis(table_sjis, sjis_code);
         }
     }
@@ -165,5 +166,6 @@ int main() {
     int32_t size;
     data = get_file_raw_data("sjis.txt", &size);
     print_sjis_data(data, size);
+    free(data);
     return 0;
 }
